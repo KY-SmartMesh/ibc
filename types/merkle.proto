@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "types";
+package types;
 
 // LeafNode contains the key/value pair to prove
 message LeafNode {

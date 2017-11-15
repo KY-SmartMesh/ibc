@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package types;
+
+// SubStore contains the name and root hash for a substore
+message SubStore {
+    string name = 1;
+    bytes root = 2;
+}
+
+// SimpleStep is an inner node between SubStore and the
+// MultiStore root
+message SimpleStep {
+    bytes left = 1;
+    bytes right = 2;
+}
+
+// MultiStoreProof is a merkle proof from a SubStore root
+// up to the MultiStore root
+message MultiStoreProof {
+    bytes root = 1;
+    repeated SimpleStep path = 2;
+    SubStore store = 3;
+}
