@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+option go_package = "types";
+
+// LeafNode contains the key/value pair to prove
+message LeafNode {
+    bytes key = 1;
+    bytes value = 2;
+    uint64 version = 3;
+}
+
+// ProofInnerNode contains a step on the path from leaf to root
+//
+// Only one of left/right will be defined (the path not taken),
+// the other one will be empty and should be filled with the
+// value of the
+message ProofInnerNode {
+    uint32 height = 1;
+    uint64 size = 2;
+    bytes left = 3;
+    bytes right = 4;
+}
+
+// PathWithNode is the entire set of proofs from leaf data to
+// root hash, but not including the root hash, as we may want
+// to path multiple paths together for eg. key missing or range
+// proofs.
+message PathWithNode {
+    repeated ProofInnerNode path = 1;
+    LeafNode node = 2;
+}
+
+// KeyExistsProof combines the proof of a given leaf node along
+// with the root hash it should match. This must be calculated
+// to verify, but the root hash first can be used to locate the
+// needed header before running the proof verification.
+message KeyExistsProof {
+    bytes root = 1;
+    PathWithNode path = 2;
+}
+
+// KeyAbsentProof represents a proof of the absence of a
+// single key.
+//
+// left must be less than the missing key and right must be
+// greater than the missing key.
+// left and right must be adjacent paths (or leftmost/nil or
+// nil/rightmost).
+// this proves there is nothing between left and right, so key
+// must not exist in the tree.
+message KeyAbsentProof {
+    bytes root = 1;
+    PathWithNode left = 2;
+    PathWithNode right = 3;
+}
