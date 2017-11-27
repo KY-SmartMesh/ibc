@@ -2,54 +2,60 @@ syntax = "proto3";
 
 package types;
 
-// LeafNode contains the key/value pair to prove
-message LeafNode {
-    bytes key = 1;
-    bytes value = 2;
-    uint64 version = 3;
-}
 
-// ProofInnerNode contains a step on the path from leaf to root
+// HashOp is the hashing algorithm we use at each level
+enum HashOp {
+    RIPEMD160 = 0;
+    SHA224 = 1;
+    SHA256 = 2;
+    SHA384 = 3;
+    SHA512 = 4;
+    SHA3_224 = 5;
+    SHA3_256 = 6;
+    SHA3_384 = 7;
+    SHA3_512 = 8;
+    SHA256_X2 = 9;
+};
+
+// Op represents one hash in a chain of hashes.
+// An operation takes the output of the last level and returns
+// a hash for the next level:
+// Op(last) => Operation(prefix + last + sufix)
 //
-// Only one of left/right will be defined (the path not taken),
-// the other one will be empty and should be filled with the
-// value of the
-message ProofInnerNode {
-    uint32 height = 1;
-    uint64 size = 2;
-    bytes left = 3;
-    bytes right = 4;
+// A simple left/right hash would simply set prefix=left or
+// suffix=right and leave the other blank. However, one could
+// also represent the a Patricia trie proof by setting
+// prefix to the rlp encoding of all nodes before the branch
+// we select, and suffix to all those after the one we select.
+message Op {
+    bytes prefix = 1;
+    bytes suffix = 2;
+    HashOp op = 3;
 }
 
-// PathWithNode is the entire set of proofs from leaf data to
-// root hash, but not including the root hash, as we may want
-// to path multiple paths together for eg. key missing or range
-// proofs.
-message PathWithNode {
-    repeated ProofInnerNode path = 1;
-    LeafNode node = 2;
+// Data is the end value stored, used to generate the initial hash store
+message Data {
+    bytes prefix = 1;
+    bytes key = 2;
+    bytes value = 3;
+    HashOp op = 4;
+    // If it is KeyValue, this is the data we want
+    // If it is SubTree, key is name of the tree, value is root hash
+    // Expect another branch to follow
+    enum DataType {
+        KeyValue = 0;
+        SubTree = 1;
+    }
+    DataType dataType = 5;
 }
 
-// KeyExistsProof combines the proof of a given leaf node along
-// with the root hash it should match. This must be calculated
-// to verify, but the root hash first can be used to locate the
-// needed header before running the proof verification.
-message KeyExistsProof {
-    bytes root = 1;
-    PathWithNode path = 2;
-}
-
-// KeyAbsentProof represents a proof of the absence of a
-// single key.
+// Branch will hash data and then pass it through operations from
+// last to first in order to calculate the root node.
 //
-// left must be less than the missing key and right must be
-// greater than the missing key.
-// left and right must be adjacent paths (or leftmost/nil or
-// nil/rightmost).
-// this proves there is nothing between left and right, so key
-// must not exist in the tree.
-message KeyAbsentProof {
-    bytes root = 1;
-    PathWithNode left = 2;
-    PathWithNode right = 3;
+// Visualize Branch as representing the data closest to root as the
+// first item, and the leaf as the last item.
+message Branch {
+    repeated Op operations = 1;
+    Data data = 2;
 }
+
