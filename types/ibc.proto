@@ -3,29 +3,60 @@ syntax = "proto3";
 package types;
 
 import "simple.proto";
+import "google/protobuf/timestamp.proto";
 
-// IBCKey represents the meaning of a key in the
-// IBC merkle tree, it can easily be de/serialized
-// with protobuf to provide context for the value.
-//
-// count is stored as fixed64, always 8 bytes, so
-// integers are in lexographic order (eg. if B and A
-// are identical, except B.count > A.count, then a
-// byte-compare of serialized(B) > serialized(A)
-message IBCKey {
-    // chain_id is which chain this queue/header is
+message QueueName {
+    // chain_id is which chain this queue is
     // associated with
     string chain_id = 1;
-    enum Content {
-        HEADER = 0;
-        INPUT = 1;
-        OUTPUT = 2;
+    enum Purpose {
+        SEND = 0;
+        RECEIPT = 1;
     }
-    Content content = 2;
-    // count is the packet number for input/output, or
-    // the block height for the header
-    fixed64 count = 3;
+    Purpose purpose = 2;
 }
+
+// StateKey is a key for the head/tail of a given queue
+message StateKey {
+    QueueName queue = 1;
+    // both encode into one byte with varint encoding
+    // never clash with 8 byte message indexes
+    enum State {
+        HEAD = 0;
+        TAIL = 0x7f;
+    }
+    State state = 2;
+
+}
+
+// StateValue is the type stored under a StateKey
+message StateValue {
+   fixed64 index = 1;
+}
+
+// MessageKey is the key for message *index* in a given queue
+message MessageKey {
+    QueueName queue = 1;
+    fixed64 index = 2;
+}
+
+// SendValue is stored under a MessageKey in the SEND queue
+message SendValue {
+    uint64 maxHeight = 1;
+    google.protobuf.Timestamp maxTime = 2;
+    // use kind instead of type to avoid keyword conflict
+    bytes kind = 3;
+    bytes data = 4;
+}
+
+// ReceiptValue is stored under a MessageKey in the RECEIPT queue
+message ReceiptValue {
+    // 0 is success, others are application-defined errors
+    int32 errorCode = 1;
+    // contains result on success, optional info on error
+    bytes data = 2;
+}
+
 
 // IBCPacket sends a merkle proof along with routing
 // information. Depending on the key/value sent as part of
