@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package types;
 
-import "simple.proto";
 import "google/protobuf/timestamp.proto";
 
 message QueueName {
@@ -26,7 +25,6 @@ message StateKey {
         TAIL = 0x7f;
     }
     State state = 2;
-
 }
 
 // StateValue is the type stored under a StateKey
@@ -57,20 +55,3 @@ message ReceiptValue {
     bytes data = 2;
 }
 
-
-// IBCPacket sends a merkle proof along with routing
-// information. Depending on the key/value sent as part of
-// the proof (proof.data.path.node.{key,value}), this packet
-// can be interpretted as a send packet or a receipt.
-//
-// src_chain and src_height are used to identify the sender
-// and look up the header with which to verify this packet.
-// dest_chain is used for routing when the packet traverses
-// multiple chains, and can be left blank when sending
-// directly to the destination chain.
-message IBCPacket {
-    string dest_chain = 1;
-    string src_chain = 2;
-    uint64 src_height = 3;
-    MultiStoreProof proof = 4;
-}
