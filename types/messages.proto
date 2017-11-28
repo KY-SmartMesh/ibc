@@ -2,11 +2,7 @@ syntax = "proto3";
 
 package types;
 
-//import "merkle.proto";
-
-message MerkleProof {
-    // TODO: giant proof structure
-}
+import "merkle.proto";
 
 
 // IBCPacket sends a proven key/value pair from an IBCQueue.
@@ -28,8 +24,6 @@ message IBCPacket {
         CLEANUP = 3;
     }
     MsgType msgType = 3;
-    bytes key = 4;
-    bytes value = 5;
-    // the proof of the message
+    // the proof of the message, includes key and value
     MerkleProof proof = 6;
 }
